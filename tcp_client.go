@@ -4,25 +4,50 @@ import (
 	"net"
 	"log"
 	"os"
+	"github.com/nunsanity/is105sem03/mycrypt"
 )
 
 func main() {
-	conn, err := net.Dial("tcp", "172.17.0.3:8080")
+	conn, err := net.Dial("tcp", "172.17.0.2:8080")
 	if err != nil {
 		log.Fatal(err)
 	}
     
-	log.Println("os.Args[1] = ", os.Args[1])
+	message :=[]rune{}
+	if len(os.Args)>1{
+		message = []rune(os.Args[1])
+	} else {
+		log.Fatal("Ingen melding gitt")
+	}
+    
+	kryptertMelding, err := mycrypt.Krypter(message, 4)
+	if err != nil {
+      log.Fatal(err)
+    }
 
- 	_, err = conn.Write([]byte(os.Args[1]))
+    log.Println("Kryptert melding: ", string(kryptertMelding))
+
+    _, err = conn.Write([]byte(string(kryptertMelding)))
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
+  
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
 	if err != nil {
 		log.Fatal(err)
 	} 
-	response := string(buf[:n])
-	log.Printf("reply from proxy: %s", response)
+
+    kryptertRespons :=[]rune(string(buf[:n]))
+	if len(kryptertRespons)>0{
+	dekryptertRespons, err := mycrypt.Krypter(kryptertRespons, -4)
+	if err != nil{
+		log.Fatal(err)
+	}
+	
+	log.Println("respons fra proxy: ", string(dekryptertRespons))
+    } else {
+	log.Println("Ingen respons fra proxy")
+  }
 }
